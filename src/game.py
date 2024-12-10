@@ -2,12 +2,13 @@
 import pygame
 from utils.settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from systems.car_system import CarSystem
+from systems.traffic_light_system import TrafficLightSystem
 
 class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Car Game")
+        pygame.display.set_caption("Traffic Light Simulation")
         self.clock = pygame.time.Clock()
         self.running = True
 
@@ -17,7 +18,9 @@ class Game:
 
         # Initialize the car system
         self.car_system = CarSystem(self.screen)
-        self.spawn_timer = 0  # Timer for spawning cars
+
+        # Initialize the traffic light system
+        self.traffic_light_system = TrafficLightSystem(self.screen)
 
     def run(self):
         while self.running:
@@ -32,27 +35,18 @@ class Game:
                 self.running = False
 
     def update(self):
-        # Spawn a car every 2 seconds
-        self.spawn_timer += 1
-        if self.spawn_timer >= FPS * 2:
-            self.car_system.spawn_car()
-            self.spawn_timer = 0
-
-        # Update the car system
         self.car_system.update()
+        self.traffic_light_system.update()
 
     def render(self):
         # Draw the background
         self.screen.blit(self.background, (0, 0))
 
+        # Render the traffic lights
+        self.traffic_light_system.render()
+
         # Render the cars
         self.car_system.render()
-
-        # Show car counts (optional for debugging)
-        font = pygame.font.Font(None, 36)
-        count_text = f"Up: {self.car_system.car_count['up']} Down: {self.car_system.car_count['down']} Left: {self.car_system.car_count['left']} Right: {self.car_system.car_count['right']}"
-        text_surface = font.render(count_text, True, (255, 255, 255))
-        self.screen.blit(text_surface, (10, 10))
 
         pygame.display.flip()
 
