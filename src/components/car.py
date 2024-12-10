@@ -25,11 +25,10 @@ class Car:
             self.image = pygame.transform.rotate(self.image, 180)
         # "right" doesn't need rotation
 
+        self.is_stopped = False
+
         # Store the position and rectangle
         self.rect = self.image.get_rect(topleft=(x, y))
-
-    def update(self):
-        pass  # Movement logic is handled by the system
 
     def render(self, screen):
         screen.blit(self.image, self.rect)

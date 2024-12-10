@@ -1,4 +1,3 @@
-# src/game.py
 import pygame
 from utils.settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from systems.car_system import CarSystem
@@ -16,11 +15,11 @@ class Game:
         self.background = pygame.image.load("assets/images/intersection.jpeg")
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
-        # Initialize the car system
-        self.car_system = CarSystem(self.screen)
-
         # Initialize the traffic light system
         self.traffic_light_system = TrafficLightSystem(self.screen)
+
+        # Initialize the car system, passing the traffic light system
+        self.car_system = CarSystem(self.screen)
 
     def run(self):
         while self.running:
@@ -35,8 +34,8 @@ class Game:
                 self.running = False
 
     def update(self):
-        self.car_system.update()
         self.traffic_light_system.update()
+        self.car_system.update(self.traffic_light_system)
 
     def render(self):
         # Draw the background
