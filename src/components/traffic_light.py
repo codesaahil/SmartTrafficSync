@@ -3,7 +3,7 @@ import os
 
 
 class TrafficLight:
-    def __init__(self, x, y):
+    def __init__(self, x, y, state_durations, state):
         # Load traffic light images
         light_images_path = "assets/images/lights"
         self.images = {
@@ -15,18 +15,15 @@ class TrafficLight:
         # Scale the images
         self.images = {key: pygame.transform.scale(img, (40, 80)) for key, img in self.images.items()}
 
-        self.state = "red"  # Initial state
+        self.state = state
         self.image = self.images[self.state]
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.timer = 0  # Timer to switch states
-        self.state_durations = {
-            "red": 120,  # Duration in frames (e.g., 2 seconds at 60 FPS)
-            "yellow": 30,
-            "green": 90,
-        }
+        self.state_durations = state_durations
 
-    def update(self):
+    def update(self, state_durations):
+        self.state_durations = state_durations
         self.timer += 1
         if self.timer >= self.state_durations[self.state]:
             self.timer = 0

@@ -2,12 +2,13 @@ import random
 from components.car import Car
 
 class CarSystem:
-    def __init__(self, screen):
+    def __init__(self, screen, traffic_light_system):
         self.screen = screen
         self.cars = []  # List to hold active car instances
         self.car_count = {"up": 0, "down": 0, "left": 0, "right": 0}  # Global count of cars per direction
         self.spawn_timer = 0  # Timer to control spawning
         self.spawn_interval = random.randint(180, 360)  # Random interval in frames (0.5-1.5 seconds at 60 FPS)
+        self.traffic_light_system = traffic_light_system
 
         # Define stop positions for each direction
         self.stop_positions = {
@@ -16,6 +17,12 @@ class CarSystem:
             "up": 620,
             "down": 380,
         }
+
+    def get_traffic_density_horizontal(self):
+        return self.car_count["left"] + self.car_count["left"]
+    
+    def get_traffic_density_vertical(self):
+        return self.car_count["up"] + self.car_count["down"]
 
     def spawn_car(self):
         directions = ["up", "down", "left", "right"]
@@ -49,7 +56,7 @@ class CarSystem:
                 self.car_count[direction] += 1
                 break  # Exit after successful spawn
 
-    def update(self, traffic_light_system):
+    def update(self):
         # Increment the spawn timer
         self.spawn_timer += 1
         if self.spawn_timer >= self.spawn_interval:
@@ -64,7 +71,7 @@ class CarSystem:
             
             # Check traffic light state
             should_stop_for_light = any(
-                traffic_light_system.traffic_lights[light_index].state in ["red", "yellow"]
+                self.traffic_light_system.traffic_lights[light_index].state in ["red", "yellow"]
                 for light_index in relevant_lights
             )
 

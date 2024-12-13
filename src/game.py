@@ -2,6 +2,7 @@ import pygame
 from utils.settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from systems.car_system import CarSystem
 from systems.traffic_light_system import TrafficLightSystem
+from systems.optimization_system import FuzzyTrafficController
 
 class Game:
     def __init__(self):
@@ -19,7 +20,9 @@ class Game:
         self.traffic_light_system = TrafficLightSystem(self.screen)
 
         # Initialize the car system, passing the traffic light system
-        self.car_system = CarSystem(self.screen)
+        self.car_system = CarSystem(self.screen, self.traffic_light_system)
+
+        self.fuzzy_controller = FuzzyTrafficController(self.car_system)
 
     def run(self):
         while self.running:
@@ -34,8 +37,16 @@ class Game:
                 self.running = False
 
     def update(self):
-        self.traffic_light_system.update()
-        self.car_system.update(self.traffic_light_system)
+        # Get optimized traffic light durations
+        state_durations = self.fuzzy_controller.get_traffic_light_durations()
+        state = self.fuzzy_controller.get_all_states(state_durations)
+        
+        # Update systems with fuzzy-optimized durations
+        self.traffic_light_system.update(state)
+        self.car_system.update()
+        
+        # # Optional: Periodically reoptimize
+        # self.fuzzy_controller.reoptimize_periodically(self.iteration_count)
 
     def render(self):
         # Draw the background
