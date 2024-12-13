@@ -17,12 +17,12 @@ class FuzzyTrafficController:
         low_b, med_b, high_b = sorted(params[3:6])
 
         # Inputs
-        A_density = ctrl.Antecedent(np.arange(0, 101, 1), 'A_density')
-        B_density = ctrl.Antecedent(np.arange(0, 101, 1), 'B_density')
+        A_density = ctrl.Antecedent(np.arange(0, 6, 1), 'A_density')
+        B_density = ctrl.Antecedent(np.arange(0, 6, 1), 'B_density')
 
         # Outputs
-        A_duration = ctrl.Consequent(np.arange(10, 61, 1), 'A_duration')
-        B_duration = ctrl.Consequent(np.arange(10, 61, 1), 'B_duration')
+        A_duration = ctrl.Consequent(np.arange(5, 21, 1), 'A_duration')
+        B_duration = ctrl.Consequent(np.arange(5, 21, 1), 'B_duration')
 
         # Membership functions for densities
         A_density['low'] = fuzz.trapmf(A_density.universe, [0, 0, low_a, med_a])
@@ -34,13 +34,13 @@ class FuzzyTrafficController:
         B_density['high'] = fuzz.trapmf(B_density.universe, [med_b, high_b, 100, 100])
 
         # Membership functions for durations
-        A_duration['short'] = fuzz.trimf(A_duration.universe, [10, 20, 30])
-        A_duration['medium'] = fuzz.trimf(A_duration.universe, [20, 40, 50])
-        A_duration['long'] = fuzz.trimf(A_duration.universe, [40, 50, 60])
+        A_duration['short'] = fuzz.trimf(A_duration.universe, [5, 8, 12])
+        A_duration['medium'] = fuzz.trimf(A_duration.universe, [8, 15, 18])
+        A_duration['long'] = fuzz.trimf(A_duration.universe, [15, 18, 20])
 
-        B_duration['short'] = fuzz.trimf(B_duration.universe, [10, 20, 30])
-        B_duration['medium'] = fuzz.trimf(B_duration.universe, [20, 40, 50])
-        B_duration['long'] = fuzz.trimf(B_duration.universe, [40, 50, 60])
+        B_duration['short'] = fuzz.trimf(B_duration.universe, [5, 8, 12])
+        B_duration['medium'] = fuzz.trimf(B_duration.universe, [8, 15, 18])
+        B_duration['long'] = fuzz.trimf(B_duration.universe, [15, 18, 20])
 
         # Define all 9 possible rules
         rules = [
@@ -90,8 +90,8 @@ class FuzzyTrafficController:
 
     def optimize_fuzzy_system(self):
         # Parameter bounds for fuzzy membership functions
-        lb = [0, 20, 40, 0, 20, 40]  # Lower bounds for low, medium, high (A and B)
-        ub = [20, 60, 100, 20, 60, 100]  # Upper bounds for low, medium, high (A and B)
+        lb = [0, 2, 4, 0, 2, 4]  # Lower bounds for low, medium, high (A and B)
+        ub = [2, 3, 6, 2, 3, 6]  # Upper bounds for low, medium, high (A and B)
 
         # Run PSO
         self.best_params, _ = pso(
