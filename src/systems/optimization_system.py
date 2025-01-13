@@ -2,7 +2,6 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 from pyswarm import pso
-import random
 
 class FuzzyTrafficController:
     def __init__(self, car_system):
@@ -60,33 +59,49 @@ class FuzzyTrafficController:
         return ctrl.ControlSystemSimulation(system)
 
     def simulate_traffic(self, params):
-        # Use actual car system data instead of random generation
         fuzzy_system = self.create_fuzzy_system(params)
 
-        # Get traffic densities from car system
-        A_density_value = min(100, max(0, self.car_system.get_traffic_density_horizontal()))
-        B_density_value = min(100, max(0, self.car_system.get_traffic_density_vertical()))
+        a_density_value = min(100, max(0, self.car_system.get_traffic_density_horizontal()))
+        b_density_value = min(100, max(0, self.car_system.get_traffic_density_vertical()))
 
-        # Compute fuzzy system output
-        fuzzy_system.input['A_density'] = A_density_value
-        fuzzy_system.input['B_density'] = B_density_value
+        fuzzy_system.input['A_density'] = a_density_value
+        fuzzy_system.input['B_density'] = b_density_value
 
         try:
             fuzzy_system.compute()
-            A_duration = fuzzy_system.output['A_duration']
-            B_duration = fuzzy_system.output['B_duration']
-
-            # Simple fitness calculation
-            # Considers density, duration, and potential traffic flow
-            fitness = (A_density_value * B_duration + B_density_value * A_duration) / (A_duration + B_duration)
-            return fitness
+            a_duration = fuzzy_system.output['A_duration']
+            b_duration = fuzzy_system.output['B_duration']
+            return a_duration, b_duration
         except Exception as e:
             print(f"Error in fuzzy computation: {e}")
-            return 0
+            return None, None
 
     def fitness_function(self, params):
-        # Negative fitness for PSO minimization
-        return -self.simulate_traffic(params)
+        a_duration, b_duration = self.simulate_traffic(params)
+
+        if a_duration is None or b_duration is None:
+            return float('inf')  # Penalize invalid outputs
+
+        a_density_value = np.clip(self.car_system.get_traffic_density_horizontal(), 0, 100)
+        b_density_value = np.clip(self.car_system.get_traffic_density_vertical(), 0, 100)
+        epsilon = 1e-9
+
+        total_wait_time_a = a_density_value * b_duration
+        total_wait_time_b = b_density_value * a_duration
+        total_wait_time = total_wait_time_a + total_wait_time_b
+
+        vehicles_a_served = min(a_density_value, (a_duration / 60) * 100)
+        vehicles_b_served = min(b_density_value, (b_duration / 60) * 100)
+        total_vehicles_served = vehicles_a_served + vehicles_b_served
+
+        average_system_time = total_wait_time / (total_vehicles_served + epsilon) if total_vehicles_served > 0 else float('inf')
+        average_throughput = total_vehicles_served / (a_density_value + b_density_value + epsilon) if (a_density_value + b_density_value) > 0 else 0
+
+        weight_wait = 1.0
+        weight_throughput = 1.0
+
+        fitness = weight_wait * average_system_time - weight_throughput * average_throughput
+        return fitness
 
     def optimize_fuzzy_system(self):
         # Parameter bounds for fuzzy membership functions
