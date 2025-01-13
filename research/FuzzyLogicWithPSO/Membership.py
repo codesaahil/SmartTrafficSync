@@ -75,3 +75,4 @@ def demonstrate_fuzzy_inference():
 
 # Run the demonstrative fuzzy inference
 demonstrate_fuzzy_inference()
+
