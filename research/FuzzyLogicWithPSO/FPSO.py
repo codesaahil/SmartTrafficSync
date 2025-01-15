@@ -1,3 +1,13 @@
+"""Traffic signal control simulation using fuzzy logic and optimization.
+
+This module implements a traffic signal control system using fuzzy logic,
+with an option to optimize the fuzzy system parameters using Particle Swarm
+Optimization (PSO). It includes classes for defining the fuzzy system,
+simulating traffic flow, evaluating performance metrics, and performing
+optimization. The module also provides a comparison against a fixed-time
+traffic control strategy.
+"""
+
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
@@ -5,12 +15,22 @@ from pyswarm import pso
 import random
 from prettytable import PrettyTable
 
-# --- Single Responsibility Principle (SRP) ---
-
-# Separate class for Fuzzy System creation
 class FuzzySystemFactory:
+    """Factory class to create a fuzzy control system for traffic signals."""
     @staticmethod
     def create(params):
+        """Creates a fuzzy control system simulation.
+
+        Args:
+            params (list): A list of 6 parameters defining the membership
+                           function boundaries for 'A_density' and 'B_density'.
+                           The first three parameters define the 'low', 'medium',
+                           and 'high' boundaries for 'A_density', and the next three
+                           define the boundaries for 'B_density'.
+
+        Returns:
+            ctrl.ControlSystemSimulation: An initialized fuzzy control system simulation.
+        """
         low_a, med_a, high_a = sorted(params[:3])
         low_b, med_b, high_b = sorted(params[3:6])
 
@@ -51,21 +71,57 @@ class FuzzySystemFactory:
         system = ctrl.ControlSystem(rules)
         return ctrl.ControlSystemSimulation(system)
 
-# Separate class for Traffic Simulation (Open/Closed Principle)
 class TrafficSimulator:
+    """Simulates traffic flow using a given traffic controller."""
     def simulate(self, controller, traffic_data):
+        """Simulates one step of traffic control.
+
+        Args:
+            controller (TrafficController): The traffic controller to use for simulation.
+            traffic_data (dict): A dictionary containing the current traffic density
+                                  for lane 'A' and 'B'.
+                                  Example: {'A_density': 30, 'B_density': 70}
+
+        Returns:
+            tuple: The determined durations for traffic light 'A' and 'B'.
+        """
         return controller.control_traffic(traffic_data)
 
-# Abstract base class for Traffic Controllers (Liskov Substitution Principle, Interface Segregation Principle)
 class TrafficController:
+    """Abstract base class for traffic controllers."""
     def control_traffic(self, traffic_data):
+        """Controls traffic flow based on the given traffic data.
+
+        Args:
+            traffic_data (dict): A dictionary containing traffic density data.
+
+        Returns:
+            tuple: The durations for traffic light 'A' and 'B'.
+        """
         raise NotImplementedError
 
 class FuzzyTrafficController(TrafficController):
+    """Traffic controller using a fuzzy logic system."""
     def __init__(self, params):
+        """Initializes the FuzzyTrafficController with fuzzy system parameters.
+
+        Args:
+            params (list): Parameters for the fuzzy system creation.
+        """
         self.fuzzy_system = FuzzySystemFactory.create(params)
 
     def control_traffic(self, traffic_data):
+        """Controls traffic lights using the fuzzy logic system.
+
+        Args:
+            traffic_data (dict): A dictionary containing the current traffic density
+                                  for lane 'A' and 'B'.
+                                  Example: {'A_density': 30, 'B_density': 70}
+
+        Returns:
+            tuple: The computed durations for traffic light 'A' and 'B', or (None, None)
+                   if an error occurs during fuzzy computation.
+        """
         a_density_value = np.clip(traffic_data['A_density'], 0, 100)
         b_density_value = np.clip(traffic_data['B_density'], 0, 100)
 
@@ -80,16 +136,41 @@ class FuzzyTrafficController(TrafficController):
             return None, None
 
 class FixedTimeTrafficController(TrafficController):
+    """Traffic controller with fixed time durations for traffic lights."""
     def __init__(self, fixed_duration_a, fixed_duration_b):
+        """Initializes the FixedTimeTrafficController with fixed durations.
+
+        Args:
+            fixed_duration_a (int): The fixed duration for traffic light 'A'.
+            fixed_duration_b (int): The fixed duration for traffic light 'B'.
+        """
         self.fixed_duration_a = fixed_duration_a
         self.fixed_duration_b = fixed_duration_b
 
     def control_traffic(self, traffic_data):
+        """Returns the fixed durations for traffic lights 'A' and 'B'.
+
+        Args:
+            traffic_data (dict): The traffic data (not used by this controller).
+
+        Returns:
+            tuple: The fixed durations for traffic light 'A' and 'B'.
+        """
         return self.fixed_duration_a, self.fixed_duration_b
 
-# Separate class for Metric Calculation (SRP)
 class MetricsCalculator:
+    """Calculates performance metrics for the traffic control system."""
     def calculate_metrics(self, a_duration, b_duration, traffic_data):
+        """Calculates various performance metrics based on the control output.
+
+        Args:
+            a_duration (float): The duration for traffic light 'A'.
+            b_duration (float): The duration for traffic light 'B'.
+            traffic_data (dict): The traffic density data used for control.
+
+        Returns:
+            dict: A dictionary containing calculated performance metrics.
+        """
         total_wait_time_a = 0
         total_wait_time_b = 0
         total_vehicles_a_served = 0
@@ -153,20 +234,44 @@ class MetricsCalculator:
         }
         return metrics
 
-# --- Dependency Inversion Principle (DIP) ---
-
-# Abstract Fitness Evaluator
 class FitnessEvaluator:
+    """Abstract base class for fitness evaluators."""
     def evaluate(self, controller, traffic_data):
+        """Evaluates the fitness of a traffic controller.
+
+        Args:
+            controller (TrafficController): The traffic controller to evaluate.
+            traffic_data (dict): The traffic density data used for evaluation.
+
+        Returns:
+            float: The fitness score of the controller.
+        """
         raise NotImplementedError
 
 class FuzzyFitnessEvaluator(FitnessEvaluator):
+    """Evaluates the fitness of a fuzzy traffic controller."""
     def __init__(self, metrics_calculator, weight_wait=1.0, weight_throughput=1.0):
+        """Initializes the FuzzyFitnessEvaluator.
+
+        Args:
+            metrics_calculator (MetricsCalculator): The calculator for performance metrics.
+            weight_wait (float): The weight for average system time in the fitness function.
+            weight_throughput (float): The weight for average throughput in the fitness function.
+        """
         self.metrics_calculator = metrics_calculator
         self.weight_wait = weight_wait
         self.weight_throughput = weight_throughput
 
     def evaluate(self, controller, traffic_data):
+        """Evaluates the fitness of the fuzzy traffic controller.
+
+        Args:
+            controller (FuzzyTrafficController): The fuzzy traffic controller to evaluate.
+            traffic_data (dict): The traffic density data used for evaluation.
+
+        Returns:
+            float: The calculated fitness score.
+        """
         a_duration, b_duration = controller.control_traffic(traffic_data)
         metrics = self.metrics_calculator.calculate_metrics(a_duration, b_duration, traffic_data)
         average_system_time = metrics.get("average_system_time", 1e9)
@@ -174,8 +279,17 @@ class FuzzyFitnessEvaluator(FitnessEvaluator):
         fitness = self.weight_wait * average_system_time - self.weight_throughput * average_throughput
         return fitness
 
-# --- Helper functions ---
 def calculate_average_metrics(simulator, controller, num_simulations=100):
+    """Calculates the average performance metrics over multiple simulations.
+
+    Args:
+        simulator (TrafficSimulator): The traffic simulator.
+        controller (TrafficController): The traffic controller to evaluate.
+        num_simulations (int): The number of simulations to run.
+
+    Returns:
+        dict: A dictionary containing the average performance metrics.
+    """
     all_metrics = []
     metrics_calculator = MetricsCalculator()
     for _ in range(num_simulations):
@@ -190,8 +304,19 @@ def calculate_average_metrics(simulator, controller, num_simulations=100):
             average_metrics[key] = np.mean([m[key] for m in all_metrics])
     return average_metrics
 
-# --- Optimization ---
 def optimize_fuzzy_system(fitness_evaluator, lb, ub, swarmsize=20, maxiter=50):
+    """Optimizes the parameters of the fuzzy system using Particle Swarm Optimization.
+
+    Args:
+        fitness_evaluator (FitnessEvaluator): The evaluator for the fitness function.
+        lb (list): Lower bounds for the parameters.
+        ub (list): Upper bounds for the parameters.
+        swarmsize (int): The number of particles in the PSO swarm.
+        maxiter (int): The maximum number of iterations for PSO.
+
+    Returns:
+        tuple: The best parameters found and the corresponding best fitness score.
+    """
     def fitness_function_for_pso(params):
         controller = FuzzyTrafficController(params)
         traffic_data = {"A_density": random.randint(0, 100), "B_density": random.randint(0, 100)}
@@ -200,9 +325,7 @@ def optimize_fuzzy_system(fitness_evaluator, lb, ub, swarmsize=20, maxiter=50):
     best_params, best_score = pso(fitness_function_for_pso, lb, ub, swarmsize=swarmsize, maxiter=maxiter)
     return best_params, best_score
 
-# --- Main Execution ---
 if __name__ == "__main__":
-    # Optimization
     weight_wait = 1.0
     weight_throughput = 1.0
     lb = [0, 20, 40, 0, 20, 40]
@@ -214,19 +337,15 @@ if __name__ == "__main__":
     print(f"Best Parameters (Fuzzy): {best_params}")
     print(f"Best Fitness Score (Fuzzy): {best_score:.2f}")
 
-    # Simulation and Comparison
     num_simulations = 100
     simulator = TrafficSimulator()
 
-    # Fuzzy Controller
     optimized_fuzzy_controller = FuzzyTrafficController(best_params)
     average_fuzzy_metrics = calculate_average_metrics(simulator, optimized_fuzzy_controller, num_simulations)
 
-    # Fixed Time Controller
     fixed_time_controller = FixedTimeTrafficController(30, 30)
     average_fixed_time_metrics = calculate_average_metrics(simulator, fixed_time_controller, num_simulations)
 
-    # Comparison Table
     table = PrettyTable()
     table.field_names = ["Metric", "Fuzzy Logic Controller (Avg)", "Fixed Time Controller (Avg)", "Better"]
 
@@ -254,7 +373,6 @@ if __name__ == "__main__":
     print(f"\nPerformance Comparison (Averaged over {num_simulations} simulations):")
     print(table)
 
-    # Overall Performance
     print("\nOverall Performance (Averaged):")
     avg_system_time_fuzzy = average_fuzzy_metrics.get('average_system_time', float('inf'))
     avg_system_time_fixed = average_fixed_time_metrics.get('average_system_time', float('inf'))
