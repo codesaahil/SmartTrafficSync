@@ -1,3 +1,5 @@
+# src/game.py
+
 import pygame
 from utils.settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from systems.car_system import CarSystem

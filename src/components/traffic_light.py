@@ -1,3 +1,5 @@
+# src/components/traffic_light.py
+
 import pygame
 import os
 

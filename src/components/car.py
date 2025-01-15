@@ -1,4 +1,5 @@
 # src/components/car.py
+
 import os
 import random
 import pygame

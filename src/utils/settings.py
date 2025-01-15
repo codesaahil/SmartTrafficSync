@@ -1,3 +1,5 @@
+# src/utils/settings.py
+
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 1000
 FPS = 60

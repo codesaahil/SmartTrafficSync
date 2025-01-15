@@ -1,3 +1,5 @@
+# src/systems/render_system.py
+
 import pygame
 
 class RenderSystem:
